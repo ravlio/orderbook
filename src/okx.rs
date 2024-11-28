@@ -185,7 +185,7 @@ impl WebsocketClient {
     /// let mut cl = WebsocketClient::new("wss://ws.okx.com:8443/ws/v5/public")
     ///     .expect("failed to create okx client");
     /// let mut rx = cl
-    ///     .subscribe((Currency::Btc, Currency::Usdt), Channel::Books5)
+    ///     .subscribe_to_orderbook((Currency::Btc, Currency::Usdt), Channel::Books5)
     ///     .await
     ///     .expect("failed to subscribe");
     /// for ob in rx.recv().await {
@@ -198,7 +198,7 @@ impl WebsocketClient {
     }
 
     // subscribe listens to the websocket and return channel of snapshots.
-    pub async fn subscribe(
+    pub async fn subscribe_to_orderbook(
         &mut self,
         inst: Instrument,
         chan: Channel,
@@ -240,7 +240,7 @@ impl WebsocketClient {
         Ok(receiver)
     }
 
-    pub async fn unsubstribe(&mut self, inst: Instrument, chan: Channel) -> Result<()> {
+    pub async fn unsubstribe_from_orderbook(&mut self, inst: Instrument, chan: Channel) -> Result<()> {
         let (ws_stream, _) = connect_async(self.url.as_str()).await?;
         let (mut write, mut read) = ws_stream.split();
 
