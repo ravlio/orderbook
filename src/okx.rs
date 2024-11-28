@@ -96,7 +96,7 @@ struct OrderBookData {
 // OrderBookWSResponse is a struct that represents the response from the order book websocket.
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct OrderBookWsResponse {
+struct OrderBookWebsocketResponse {
     action: Option<OrderBookAction>,
     data: Vec<OrderBookData>,
 }
@@ -293,7 +293,7 @@ fn process_ws_message(msg: &Message, ob: &mut OrderBook) -> Result<Option<OrderB
     match msg {
         Message::Text(txt) => {
             print!("{txt}");
-            let response: OrderBookWsResponse = serde_json::from_str(&txt)?;
+            let response: OrderBookWebsocketResponse = serde_json::from_str(&txt)?;
             match response.action {
                 Some(OrderBookAction::Snapshot) | None => {
                     ob.cleanup();
