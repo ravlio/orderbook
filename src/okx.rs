@@ -1,10 +1,15 @@
+use futures::stream::SplitSink;
+use futures::stream::SplitStream;
 use futures::stream::StreamExt;
 use futures::SinkExt;
 use reqwest::Client as cl;
 use serde::Deserialize;
+use tokio::net::TcpStream;
 use tokio::sync::mpsc::channel;
 use tokio::sync::mpsc::Receiver;
 use tokio_tungstenite::connect_async;
+use tokio_tungstenite::MaybeTlsStream;
+use tokio_tungstenite::WebSocketStream;
 use tungstenite::Error;
 use tungstenite::Message;
 use url::Url;
@@ -41,6 +46,21 @@ impl Channel {
     fn as_str(&self) -> &str {
         match self {
             Channel::Books5 => "books5",
+        }
+    }
+}
+
+// Op is an enum that represents the websocket operation.
+pub enum WsOp {
+    Subscribe,
+    Unsubscribe,
+}
+
+impl WsOp {
+    fn as_str(&self) -> &str {
+        match self {
+            WsOp::Subscribe => "subscribe",
+            WsOp::Unsubscribe => "unsubscribe",
         }
     }
 }
@@ -185,33 +205,8 @@ impl WSClient {
         let (ws_stream, _) = connect_async(self.url.as_str()).await?;
         let (mut write, mut read) = ws_stream.split();
 
-        // create the subscribe message
-        let req = r#"
-        {
-          "op": "subscribe",
-          "args": [
-            {
-              "channel": "{{channel}}",
-              "instId": "{{left_cur}}-{{right_cur}}"
-            }
-          ]
-        }"#;
+        make_orderbook_request(WsOp::Subscribe, inst, chan, &mut read, &mut write).await?;
 
-        let req = req.replace("{{channel}}", chan.as_str());
-        let req = req.replace("{{left_cur}}", inst.0.as_str());
-        let req = req.replace("{{right_cur}}", inst.1.as_str());
-
-        write.send(Message::Text(req.to_string())).await?;
-        match read.next().await {
-            None => return Err(Error::ConnectionClosed.into()),
-            Some(msg) => {
-                let resp: OrderBookWSHandshakeResponse =
-                    serde_json::from_str(&msg?.to_string()).unwrap();
-                if let OrderBookHandshakeEvent::Error = resp.event {
-                    return Err(OrderBookError::Connection(resp.msg));
-                }
-            }
-        }
         tokio::spawn(async move {
             while let Some(msg) = read.next().await {
                 match msg {
@@ -241,6 +236,54 @@ impl WSClient {
 
         Ok(receiver)
     }
+
+    pub async fn unsubstribe(&mut self, inst: Instrument, chan: Channel) -> Result<()> {
+        let (ws_stream, _) = connect_async(self.url.as_str()).await?;
+        let (mut write, mut read) = ws_stream.split();
+
+        make_orderbook_request(WsOp::Unsubscribe, inst, chan, &mut read, &mut write).await?;
+
+        Ok(())
+    }
+}
+
+async fn make_orderbook_request(
+    op: WsOp,
+    inst: Instrument,
+    chan: Channel,
+    read: &mut SplitStream<WebSocketStream<MaybeTlsStream<TcpStream>>>,
+    write: &mut SplitSink<WebSocketStream<MaybeTlsStream<TcpStream>>, Message>,
+) -> Result<()> {
+    let req = r#"
+    {
+      "op": "{{op}}",
+      "args": [
+        {
+          "channel": "{{channel}}",
+          "instId": "{{left_cur}}-{{right_cur}}"
+        }
+      ]
+    }"#;
+
+    let req = req.replace("{{op}}", op.as_str());
+    let req = req.replace("{{channel}}", chan.as_str());
+    let req = req.replace("{{left_cur}}", inst.0.as_str());
+    let req = req.replace("{{right_cur}}", inst.1.as_str());
+
+    write.send(Message::Text(req.to_string())).await?;
+
+    match read.next().await {
+        None => return Err(Error::ConnectionClosed.into()),
+        Some(msg) => {
+            let resp: OrderBookWSHandshakeResponse =
+                serde_json::from_str(&msg?.to_string()).unwrap();
+            if let OrderBookHandshakeEvent::Error = resp.event {
+                return Err(OrderBookError::Connection(resp.msg));
+            }
+        }
+    }
+
+    Ok(())
 }
 
 fn process_ws_message(msg: &Message, ob: &mut OrderBook) -> Result<Option<OrderBook>> {
