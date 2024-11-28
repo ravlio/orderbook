@@ -1,5 +1,7 @@
-mod error;
-mod okx;
+pub mod error;
+pub mod okx;
+
+use okx::{WebsocketClient,Channel,Currency};
 
 use std::cmp::Reverse;
 use std::collections::BTreeMap;

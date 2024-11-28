@@ -96,7 +96,7 @@ struct OrderBookData {
 // OrderBookWSResponse is a struct that represents the response from the order book websocket.
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct OrderBookWSResponse {
+struct OrderBookWsResponse {
     action: Option<OrderBookAction>,
     data: Vec<OrderBookData>,
 }
@@ -169,18 +169,19 @@ impl HTTPClient {
     }
 }
 
-// WSClient is a struct that represents the websocket client.
-struct WSClient {
+// WebsocketClient is a struct that represents the websocket client.
+pub struct WebsocketClient {
     url: Url,
 }
 
-// WSClient is a struct that represents the websocket client.
-impl WSClient {
-    /// new creates a new WSClient.
+// WebsocketClient is a struct that represents the websocket client.
+impl WebsocketClient {
+    /// new creates a new WebsocketClient.
     /// # Examples
     /// ```rust
+    /// use okx::{WebsocketClient, Currency, Channel};
     /// let mut cl =
-    ///     WSClient::new("wss://ws.okx.com:8443/ws/v5/public").expect("failed to create okx client");
+    ///     WebsocketClient::new("wss://ws.okx.com:8443/ws/v5/public").expect("failed to create okx client");
     /// let mut rx = cl
     ///     .subscribe((Currency::Btc, Currency::Usdt), Channel::Books5)
     ///     .await
@@ -191,7 +192,7 @@ impl WSClient {
     /// ```
     pub fn new(url: &str) -> Result<Self> {
         let url = Url::parse(url)?;
-        Ok(WSClient { url })
+        Ok(WebsocketClient { url })
     }
 
     // subscribe listens to the websocket and return channel of snapshots.
@@ -290,7 +291,7 @@ fn process_ws_message(msg: &Message, ob: &mut OrderBook) -> Result<Option<OrderB
     match msg {
         Message::Text(txt) => {
             print!("{txt}");
-            let response: OrderBookWSResponse = serde_json::from_str(&txt)?;
+            let response: OrderBookWsResponse = serde_json::from_str(&txt)?;
             match response.action {
                 Some(OrderBookAction::Snapshot) | None => {
                     ob.cleanup();
