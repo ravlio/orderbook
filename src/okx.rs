@@ -186,7 +186,7 @@ impl WSClient {
     ///     .await
     ///     .expect("failed to subscribe");
     /// for ob in rx.recv().await {
-    ///     dbg!(&ob);
+    ///     dbg!(&ob?);
     /// }
     /// ```
     pub fn new(url: &str) -> Result<Self> {
