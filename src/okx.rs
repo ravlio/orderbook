@@ -77,9 +77,9 @@ enum OrderBookAction {
 #[derive(Debug, Deserialize)]
 struct OrderBookLevel(
     String, // price
-    String, // size
-    String,
-    String,
+    String, // quantity
+    String, // not used
+    String, // # orders
 );
 
 // OrderBookData is a struct that represents the data in the order book.
