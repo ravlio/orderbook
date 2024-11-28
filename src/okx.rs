@@ -214,7 +214,7 @@ impl WebsocketClient {
             while let Some(msg) = read.next().await {
                 match msg {
                     Ok(msg) => {
-                        let res = process_ws_message(&msg, &mut ob);
+                        let res = process_orderbook_message(&msg, &mut ob);
                         match res {
                             Ok(v) => match v {
                                 Some(v) => {
@@ -289,7 +289,7 @@ async fn make_orderbook_request(
     Ok(())
 }
 
-fn process_ws_message(msg: &Message, ob: &mut OrderBook) -> Result<Option<OrderBook>> {
+fn process_orderbook_message(msg: &Message, ob: &mut OrderBook) -> Result<Option<OrderBook>> {
     match msg {
         Message::Text(txt) => {
             print!("{txt}");
