@@ -179,9 +179,11 @@ impl WebsocketClient {
     /// new creates a new WebsocketClient.
     /// # Examples
     /// ```rust
-    /// use okx::{WebsocketClient, Currency, Channel};
-    /// let mut cl =
-    ///     WebsocketClient::new("wss://ws.okx.com:8443/ws/v5/public").expect("failed to create okx client");
+    /// use okx::Channel;
+    /// use okx::Currency;
+    /// use okx::WebsocketClient;
+    /// let mut cl = WebsocketClient::new("wss://ws.okx.com:8443/ws/v5/public")
+    ///     .expect("failed to create okx client");
     /// let mut rx = cl
     ///     .subscribe((Currency::Btc, Currency::Usdt), Channel::Books5)
     ///     .await

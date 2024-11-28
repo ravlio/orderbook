@@ -1,11 +1,12 @@
 pub mod error;
 pub mod okx;
 
-use okx::{WebsocketClient,Channel,Currency};
-
 use std::cmp::Reverse;
 use std::collections::BTreeMap;
 
+use okx::Channel;
+use okx::Currency;
+use okx::WebsocketClient;
 use rust_decimal::prelude::FromPrimitive;
 use rust_decimal::Decimal;
 
