@@ -292,7 +292,6 @@ async fn make_orderbook_request(
 fn process_orderbook_message(msg: &Message, ob: &mut OrderBook) -> Result<Option<OrderBook>> {
     match msg {
         Message::Text(txt) => {
-            print!("{txt}");
             let response: OrderBookWebsocketResponse = serde_json::from_str(&txt)?;
             match response.action {
                 Some(OrderBookAction::Snapshot) | None => {
